@@ -1,20 +1,19 @@
 package services
 
 import (
-	"github.com/gofiber/fiber"
 	"github.com/kiliczsh/gondit/model"
-	"github.com/otiai10/copy"
 	"gopkg.in/src-d/go-git.v4"
 	"io/ioutil"
 	"log"
 	"os"
 )
 
-func Clone(scan model.Scan)  fiber.Handler{
+func Clone(scan model.Scan)  string {
 
-	dir, err := ioutil.TempDir("", "clone-example")
+	dir, err := ioutil.TempDir("", "gondit-clone")
 	if err != nil {
 		log.Fatal(err)
+		return ""
 	}
 	defer os.RemoveAll(dir)
 
@@ -24,13 +23,7 @@ func Clone(scan model.Scan)  fiber.Handler{
 
 	if err != nil {
 		log.Fatal(err)
+		return ""
 	}
-
-	defer os.RemoveAll("/tmp/src")
-
-	err = copy.Copy(dir, "/tmp/src")
-	if err != nil {
-		log.Fatal(err)
-	}
-	return nil
+	return dir
 }
