@@ -13,3 +13,7 @@ DB_PASSWORD=***
 DB_NAME=postgres
 SECRET=***
 ```
+
+## Postman Collection
+
+Checkout [postman collection](https://github.com/kiliczsh/gondit/blob/main/docs/Gondit.postman_collection.json) for API requests.
