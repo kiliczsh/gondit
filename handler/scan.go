@@ -1,12 +1,13 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"github.com/kiliczsh/gondit/database"
 	"github.com/kiliczsh/gondit/model"
+	"github.com/kiliczsh/gondit/object"
 	"github.com/kiliczsh/gondit/services"
-
-	"github.com/gofiber/fiber/v2"
 )
 
 // GetAllScans query all scans
@@ -25,22 +26,47 @@ func GetScan(c *fiber.Ctx) error {
 	db.Find(&scan, id)
 	if scan.Url == "" {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No scan found with ID", "data": nil})
-
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "Scan found", "data": scan})
+
+	var scanJson object.ScanResponse
+	if err := json.Unmarshal([]byte(scan.Response), &scanJson); err != nil {
+		fmt.Println(err.Error())
+		panic(err)
+	}
+	totalMetrics := scanJson.Metrics["_totals"]
+
+	return c.JSON(fiber.Map{
+		"status": "success",
+		"message": "Scan found",
+		"scan_id": scan.ID,
+		"scan_url": scan.Url,
+		"is_code_secure" : totalMetrics.SeverityHigh <= 1,
+		"total_metrics": totalMetrics })
 }
 
-func Test(c *fiber.Ctx) error {
+// GetScanDetails query scan
+func GetScanDetails(c *fiber.Ctx) error {
 	id := c.Params("id")
 	db := database.DB
 	var scan model.Scan
 	db.Find(&scan, id)
-	res := services.Clone(scan)
-	if res != nil {
-		return c.JSON(fiber.Map{ "success": false })
+	if scan.Url == "" {
+		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No scan found with ID", "data": nil})
 	}
-	go services.Execute(db, scan)
-	return c.JSON(fiber.Map{  "success": true, "scan_id": id, "scan" : scan.Url})
+
+	var scanJson object.ScanResponse
+	if err := json.Unmarshal([]byte(scan.Response), &scanJson); err != nil {
+		fmt.Println(err.Error())
+		panic(err)
+	}
+	totalMetrics := scanJson.Metrics["_totals"]
+
+	return c.JSON(fiber.Map{
+		"status": "success",
+		"message": "Scan found",
+		"scan": scan,
+		"is_code_secure" : totalMetrics.SeverityHigh <= 1,
+		"test_result": scanJson })
 }
 
 // CreateScan new scan
@@ -52,10 +78,6 @@ func CreateScan(c *fiber.Ctx) error {
 	}
 	db.Create(&scan)
 	fmt.Println(scan.Url)
-	res := services.Clone(*scan)
-	if res != nil {
-		return c.JSON(fiber.Map{ "success": false })
-	}
 	go services.Execute(db, *scan)
 	return c.JSON(fiber.Map{ "status": "success", "message": "Scan successfully created!",
 		"scan_id": scan.ID, "scan" : scan.Url })

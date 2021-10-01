@@ -29,7 +29,7 @@ func SetupRoutes(app *fiber.App) {
 	scan := api.Group("/scan")
 	scan.Get("/", handler.GetAllScans)
 	scan.Get("/:id", handler.GetScan)
-	scan.Get("/:id/test", handler.Test)
+	scan.Get("/:id/details", handler.GetScanDetails)
 	scan.Post("/", middleware.Protected(), handler.CreateScan)
 	scan.Delete("/:id", middleware.Protected(), handler.DeleteScan)
 }
